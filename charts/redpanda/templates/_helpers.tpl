@@ -105,6 +105,11 @@ Generate configuration needed for rpk
 {{- toJson (dict "bool" (and (dig "tls" "enabled" .Values.tls.enabled $listener) (not (empty (dig "tls" "cert" "" $listener))))) -}}
 {{- end -}}
 
+{{- define "admin-mtls-enabled" -}}
+{{- $listener := .Values.listeners.admin -}}
+{{- toJson (dict "bool" (and ((include "admin-internal-tls-enabled" . | fromJson).bool) (dig "auth" "mtls" "enabled" .Values.auth.mtls.enabled $listener))) -}}
+{{- end -}}
+
 {{- define "kafka-internal-tls-enabled" -}}
 {{- $listener := .Values.listeners.kafka -}}
 {{- toJson (dict "bool" (and (dig "tls" "enabled" .Values.tls.enabled $listener) (not (empty (dig "tls" "cert" "" $listener))))) -}}
@@ -116,6 +121,11 @@ Generate configuration needed for rpk
 
 {{- define "kafka-external-tls-cert" -}}
 {{- dig "tls" "cert" .Values.listeners.kafka.tls.cert .listener -}}
+{{- end -}}
+
+{{- define "kafka-mtls-enabled" -}}
+{{- $listener := .Values.listeners.kafka -}}
+{{- toJson (dict "bool" (and ((include "kafka-internal-tls-enabled" . | fromJson).bool) (dig "auth" "mtls" "enabled" .Values.auth.mtls.enabled $listener))) -}}
 {{- end -}}
 
 {{- define "http-internal-tls-enabled" -}}
@@ -132,9 +142,19 @@ Generate configuration needed for rpk
 {{- dig "tls" "cert" .Values.listeners.http.tls.cert .listener -}}
 {{- end -}}
 
+{{- define "http-mtls-enabled" -}}
+{{- $listener := .Values.listeners.http -}}
+{{- toJson (dict "bool" (and ((include "http-internal-tls-enabled" . | fromJson).bool) (dig "auth" "mtls" "enabled" .Values.auth.mtls.enabled $listener))) -}}
+{{- end -}}
+
 {{- define "rpc-tls-enabled" -}}
 {{- $listener := .Values.listeners.rpc -}}
 {{- toJson (dict "bool" (and (dig "tls" "enabled" .Values.tls.enabled $listener) (not (empty (dig "tls" "cert" "" $listener))))) -}}
+{{- end -}}
+
+{{- define "rpc-mtls-enabled" -}}
+{{- $listener := .Values.listeners.rpc -}}
+{{- toJson (dict "bool" (and ((include "rpc-tls-enabled" . | fromJson).bool) (dig "auth" "mtls" "enabled" .Values.auth.mtls.enabled $listener))) -}}
 {{- end -}}
 
 {{- define "schemaRegistry-internal-tls-enabled" -}}
@@ -149,6 +169,11 @@ Generate configuration needed for rpk
 
 {{- define "schemaRegistry-external-tls-cert" -}}
 {{- dig "tls" "cert" .Values.listeners.schemaRegistry.tls.cert .listener -}}
+{{- end -}}
+
+{{- define "schemaRegistry-mtls-enabled" -}}
+{{- $listener := .Values.listeners.rpc -}}
+{{- toJson (dict "bool" (and ((include "schemaRegistry-internal-tls-enabled" . | fromJson).bool) (dig "auth" "mtls" "enabled" .Values.auth.mtls.enabled $listener))) -}}
 {{- end -}}
 
 {{- define "tls-enabled" -}}
@@ -178,6 +203,25 @@ Generate configuration needed for rpk
 
 {{- define "sasl-enabled" -}}
 {{- toJson (dict "bool" (dig "enabled" false .Values.auth.sasl)) -}}
+{{- end -}}
+
+{{- define "mtls-enabled" -}}
+{{- toJson (dict "bool" (and (dig "enabled" false .Values.auth.mtls) (include "tls-enabled" .))) -}}
+{{- end -}}
+
+{{- define "superusers" -}}
+{{- $users := list -}}
+{{- if .Values.auth.sasl.enabled -}}
+  {{- range $user := .Values.auth.sasl.users -}}
+    {{- $users = append $users $user.name -}}
+  {{- end -}}
+{{- end -}}
+{{- if include "mtls-enabled" . -}}
+  {{- range $user := .Values.auth.mtls.superusers -}}
+    {{- $users = append $users $user -}}
+  {{- end -}}
+{{- end -}}
+{{- toJson (dict "users" $users) -}}
 {{- end -}}
 
 {{- define "SI-to-bytes" -}}
@@ -369,6 +413,16 @@ than 1 core.
       "--admin-api-tls-truststore"
       (printf "/etc/tls/certs/%s/ca.crt" .Values.listeners.admin.tls.cert))
     -}}
+    {{- if (include "mtls-enabled" . | fromJson).bool -}}
+      {{- $cert := .Values.listeners.admin.tls.cert -}}
+      {{- $user := first (include "superusers" . | fromJson).users -}}
+      {{- $admin = concat $admin (list
+        "--admin-api-tls-cert"
+        (printf "/etc/tls/user-certs/%s/%s/tls.crt" $cert $user)
+        "--admin-api-tls-key"
+        (printf "/etc/tls/user-certs/%s/%s/tls.key" $cert $user))
+      -}}
+    {{- end -}}
   {{- end -}}
   {{- $kafka := list -}}
   {{- if (include "kafka-internal-tls-enabled" . | fromJson).bool -}}
@@ -377,6 +431,16 @@ than 1 core.
       "--tls-truststore"
       (printf "/etc/tls/certs/%s/ca.crt" .Values.listeners.kafka.tls.cert))
     -}}
+    {{- if (include "mtls-enabled" . | fromJson).bool -}}
+      {{- $cert := .Values.listeners.kafka.tls.cert -}}
+      {{- $user := first (include "superusers" . | fromJson).users -}}
+      {{- $kafka = concat $kafka (list
+        "--tls-cert"
+        (printf "/etc/tls/user-certs/%s/%s/tls.crt" $cert $user)
+        "--tls-key"
+        (printf "/etc/tls/user-certs/%s/%s/tls.key" $cert $user))
+      -}}
+    {{- end -}}
   {{- end -}}
   {{- $sasl := list -}}
   {{- if (include "sasl-enabled" . | fromJson).bool -}}

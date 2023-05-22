@@ -248,6 +248,66 @@
         }
       }
     },
+    "pandaProxyClient": {
+      "type": "object",
+      "required": ["brokers"],
+      "properties": {
+        "brokers": {"type": "array"},
+        "broker_tls": {
+          "type": "object",
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "require_client_auth": {"type": "boolean"},
+            "cert_file": {"type": "string"},
+            "key_file": {"type": "string"},
+            "truststore_file": {"type": "string"}
+          }
+        },
+        "retries": {"type": "integer", "default": 5},
+        "produce_batch_record_count": {"type": "integer", "default": 1000},
+        "produce_batch_size_bytes": {"type": "integer", "default": 1048576},
+        "produce_batch_delay_ms": {"type": "integer", "default": 100},
+        "consumer_request_timeout_ms": {"type": "integer", "default": 100},
+        "consumer_request_max_bytes": {"type": "integer", "default": 1048576},
+        "consumer_session_timeout_ms": {"type": "integer", "default": 10000},
+        "consumer_rebalance_timeout_ms": {"type": "integer", "default": 2000},
+        "consumer_heartbeat_interval_ms": {"type": "integer", "default": 500},
+        "sasl_mechanism": {"type": "string"},
+        "scram_username": {"type": "string"},
+        "scram_password": {"type": "string"}
+      }
+    },
+    "schemaRegistryClient": {
+      "type": "object",
+      "required": ["brokers"],
+      "properties": {
+        "brokers": {"type": "array"},
+        "broker_tls": {
+          "type": "object",
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "require_client_auth": {"type": "boolean"},
+            "cert_file": {"type": "string"},
+            "key_file": {"type": "string"},
+            "truststore_file": {"type": "string"}
+          }
+        },
+        "retries": {"type": "integer", "default": 5},
+        "produce_batch_record_count": {"type": "integer", "default": 1000},
+        "produce_batch_size_bytes": {"type": "integer", "default": 1048576},
+        "produce_batch_delay_ms": {"type": "integer", "default": 100},
+        "consumer_request_timeout_ms": {"type": "integer", "default": 100},
+        "consumer_request_max_bytes": {"type": "integer", "default": 1048576},
+        "consumer_session_timeout_ms": {"type": "integer", "default": 10000},
+        "consumer_rebalance_timeout_ms": {"type": "integer", "default": 2000},
+        "consumer_heartbeat_interval_ms": {"type": "integer", "default": 500},
+        "sasl_mechanism": {"type": "string"},
+        "scram_username": {"type": "string"},
+        "scram_password": {"type": "string"}
+      }
+    },
     "resources": {
       "type": "object",
       "required": [
