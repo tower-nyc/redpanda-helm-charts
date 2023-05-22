@@ -47,12 +47,7 @@ limitations under the License.
   {{- end -}}
 {{- end -}}
 
-{{- $users := list -}}
-{{- if .Values.auth.sasl.enabled -}}
-  {{- range $user := .Values.auth.sasl.users -}}
-    {{- $users = append $users $user.name -}}
-  {{- end -}}
-{{- end -}}
+{{- $users := (include "superusers" . | fromJson).users -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -145,6 +140,9 @@ data:
         address: 0.0.0.0
         port: {{ $service.port }}
 {{- if (include "admin-internal-tls-enabled" . | fromJson).bool }}
+  {{- if (include "admin-mtls-enabled" . | fromJson).bool }}
+        authentication_method: mtls_identity
+  {{- end }}
       admin_api_tls:
         name: admin
         enabled: true
@@ -168,10 +166,16 @@ data:
         - name: internal
           address: 0.0.0.0
           port: {{ $service.port }}
+  {{- if (include "kafka-mtls-enabled" . | fromJson).bool }}
+          authentication_method: mtls_identity
+  {{- end }}
 {{- range $name, $listener := .Values.listeners.kafka.external }}
         - name: {{ $name }}
           address: 0.0.0.0
           port: {{ $listener.port }}
+  {{- if (include "kafka-mtls-enabled" $ | fromJson).bool }}
+          authentication_method: mtls_identity
+  {{- end }}
 {{- end }}
       kafka_api_tls:
 {{- if (include "kafka-internal-tls-enabled" . | fromJson).bool }}
@@ -221,6 +225,9 @@ data:
         address: 0.0.0.0
         port: {{ $service.port }}
 {{- if (include "rpc-tls-enabled" . | fromJson).bool }}
+  {{- if (include "rpc-mtls-enabled" $ | fromJson).bool }}
+        authentication_method: mtls_identity
+  {{- end }}
       rpc_server_tls:
         enabled: true
         cert_file: /etc/tls/certs/{{ $service.tls.cert }}/tls.crt
@@ -262,6 +269,9 @@ data:
         - name: internal
           address: 0.0.0.0
           port: {{ $service.port }}
+    {{- if (include "schemaRegistry-mtls-enabled" $ | fromJson).bool }}
+          authentication_method: mtls_identity
+    {{- end }}
   {{- range $name, $listener := $service.external }}
         - name: {{ $name }}
           address: 0.0.0.0
@@ -273,6 +283,9 @@ data:
             {{- fail "missing required port for schemaRegistry listener $listener.name" }}
           {{- end }}
           port: {{ $listener.port | default 8084 }}
+    {{- if (include "schemaRegistry-mtls-enabled" $ | fromJson).bool }}
+          authentication_method: mtls_identity
+    {{- end }}
   {{- end }}
       schema_registry_api_tls:
   {{- if (include "schemaRegistry-internal-tls-enabled" . | fromJson).bool }}
@@ -325,10 +338,16 @@ data:
         - name: internal
           address: 0.0.0.0
           port: {{ $service.port }}
+    {{- if (include "http-mtls-enabled" $ | fromJson).bool }}
+          authentication_method: mtls_identity
+    {{- end }}
   {{- range $name, $listener := $service.external }}
         - name: {{ $name }}
           address: 0.0.0.0
           port: {{ $listener.port }}
+    {{- if (include "http-mtls-enabled" $ | fromJson).bool }}
+          authentication_method: mtls_identity
+    {{- end }}
   {{- end }}
       pandaproxy_api_tls:
   {{- if (include "http-internal-tls-enabled" . | fromJson).bool }}
@@ -374,6 +393,16 @@ data:
   {{- end }}
 {{- end }}
 {{- /* END LISTENERS */}}
+
+{{- with .Values.pandaProxyClient }}
+    pandaproxy_client:
+      {{ toYaml . | nindent 6 }}
+{{- end }}
+
+{{- with .Values.schemaRegistryClient }}
+    schema_registry_client:
+      {{ toYaml . | nindent 6 }}
+{{- end }}
 
     rpk:
       enable_usage_stats: {{ .Values.logging.usageStats.enabled }}
