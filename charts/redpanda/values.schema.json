@@ -195,7 +195,7 @@
         "annotations": {
           "type": "object"
         },
-        "extrenalDns": {
+        "externalDns": {
           "type": "object",
           "required": [
             "enabled"
