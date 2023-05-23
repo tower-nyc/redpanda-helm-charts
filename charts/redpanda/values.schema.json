@@ -225,7 +225,8 @@
       "type": "object",
       "required": [
         "enabled",
-        "scrapeInterval"
+        "scrapeInterval",
+        "labels"
       ],
       "properties": {
         "enabled": {
@@ -234,6 +235,9 @@
         "scrapeInterval": {
           "type": "string",
           "pattern": ".*[smh]$"
+        },
+        "labels": {
+          "type": "object"
         }
       }
     },
