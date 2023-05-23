@@ -19,10 +19,10 @@ limitations under the License.
 {{- $caCertSecret := "" }}
 {{- $userCertSecret := "" }}
 {{- if (include "tls-enabled" . | fromJson).bool }}
-  {{- $caCertSecret = list (include "redpanda.fullname" $) .Values.admin.tls.cert "root-certificate" | join "-" }}
+  {{- $caCertSecret = list (include "redpanda.fullname" $) .Values.listeners.admin.tls.cert "root-certificate" | join "-" }}
   {{- if (include "auth-enabled" . | fromJson).bool -}}
     {{- $adminUser = first (include "superusers" | fromJson).users }}
-    {{- $userCertSecret = list (include "redpanda.fullname" $) .Values.admin.tls.cert "usercert" $adminUser | join "-" }}
+    {{- $userCertSecret = list (include "redpanda.fullname" $) .Values.listeners.admin.tls.cert "usercert" $adminUser | join "-" }}
   {{- end -}}
 {{- end }}
 ---
