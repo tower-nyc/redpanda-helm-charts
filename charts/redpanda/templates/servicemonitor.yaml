@@ -15,6 +15,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */}}
+{{- $adminUser := "" -}}
+{{- $caCertSecret := "" }}
+{{- $userCertSecret := "" }}
+{{- if (include "tls-enabled" . | fromJson).bool }}
+  {{- $caCertSecret = list (include "redpanda.fullname" $) .Values.admin.tls.cert "root-certificate" | join "-" }}
+  {{- if (include "auth-enabled" . | fromJson).bool -}}
+    {{- $adminUser = first (include "superusers" | fromJson).users }}
+    {{- $userCertSecret = list (include "redpanda.fullname" $) .Values.admin.tls.cert "usercert" $adminUser | join "-" }}
+  {{- end -}}
+{{- end }}
 ---
 # This servicemonitor is used by Prometheus Operator to scrape the metrics
 apiVersion: monitoring.coreos.com/v1
@@ -34,6 +44,24 @@ spec:
   - interval: {{ .Values.monitoring.scrapeInterval }}
     path: /public_metrics
     targetPort: admin
+    {{- if (include "tls-enabled" . | fromJson).bool }}
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+      ca:
+        secret:
+          name: {{ $caCertSecret }}
+          key: "tls.crt"
+      {{- if (include "auth-enabled" . | fromJson).bool }}
+      cert:
+        secret:
+          name: {{ $userCertSecret }}
+          key: "tls.crt"
+      keySecret:
+        name: {{ $userCertSecret }}
+        key: "tls.key"
+      {{- end }}
+    {{- end }}
   selector:
     matchLabels:
       monitoring.redpanda.com/enabled: "true"
