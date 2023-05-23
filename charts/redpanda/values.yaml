@@ -235,6 +235,7 @@ logging:
 monitoring:
   enabled: false
   scrapeInterval: 30s
+  labels: {}
 
 # -- Pod resource management.
 # This section simplifies resource allocation
