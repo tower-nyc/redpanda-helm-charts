@@ -20,7 +20,7 @@ limitations under the License.
 {{- $userCertSecret := "" }}
 {{- if (include "tls-enabled" . | fromJson).bool }}
   {{- $caCertSecret = list (include "redpanda.fullname" $) .Values.listeners.admin.tls.cert "root-certificate" | join "-" }}
-  {{- if (include "auth-enabled" . | fromJson).bool -}}
+  {{- if (include "mtls-enabled" . | fromJson).bool -}}
     {{- $adminUser = first (include "superusers" | fromJson).users }}
     {{- $userCertSecret = list (include "redpanda.fullname" $) .Values.listeners.admin.tls.cert "usercert" $adminUser | join "-" }}
   {{- end -}}
@@ -52,7 +52,7 @@ spec:
         secret:
           name: {{ $caCertSecret }}
           key: "tls.crt"
-      {{- if (include "auth-enabled" . | fromJson).bool }}
+      {{- if (include "mtls-enabled" . | fromJson).bool }}
       cert:
         secret:
           name: {{ $userCertSecret }}
