@@ -21,7 +21,7 @@ limitations under the License.
 {{- if (include "tls-enabled" . | fromJson).bool }}
   {{- $caCertSecret = list (include "redpanda.fullname" $) .Values.listeners.admin.tls.cert "root-certificate" | join "-" }}
   {{- if (include "mtls-enabled" . | fromJson).bool -}}
-    {{- $adminUser = first (include "superusers" | fromJson).users }}
+    {{- $adminUser = first (include "superusers" . | fromJson).users }}
     {{- $userCertSecret = list (include "redpanda.fullname" $) .Values.listeners.admin.tls.cert "usercert" $adminUser | join "-" }}
   {{- end -}}
 {{- end }}
